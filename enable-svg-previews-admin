@@ -1,0 +1,115 @@
+<?php
+//enable svg previews
+function svg_preview_enqueue_scripts( $hook ) {
+    wp_enqueue_script( 'fadupla-svg-script', get_theme_file_uri( '/includes/admin/svg.js' ), 'jquery' );
+    wp_localize_script( 'fadupla-svg-script', 'script_vars', array( 'AJAXurl' => admin_url( 'admin-ajax.php' ) ) );
+}
+
+add_action( 'admin_enqueue_scripts', 'svg_preview_enqueue_scripts' );
+
+
+function get_attachment_url_media_library() {
+    $url          = '';
+    $attachmentID = isset( $_REQUEST['attachmentID'] ) ? $_REQUEST['attachmentID'] : '';
+    if ( $attachmentID ) {
+        $url = wp_get_attachment_url( $attachmentID );
+    }
+
+    echo $url;
+
+    die();
+}
+add_action( 'wp_ajax_svg_get_attachment_url', 'get_attachment_url_media_library' );
+?>
+
+<script>
+var mediaGridObserver = new MutationObserver(function (mutations) {
+
+    for (var i = 0; i < mutations.length; i++)
+    {
+
+        for (var j = 0; j < mutations[i].addedNodes.length; j++)
+        {
+            element = $(mutations[i].addedNodes[j]);
+
+            if (element.attr('class'))
+            {
+                elementClass = element.attr('class');
+                if (element.attr('class').indexOf('attachment') != -1)
+                {
+
+                    attachmentPreview = element.children('.attachment-preview');
+                    if (attachmentPreview.length != 0)
+                    {
+                        if (attachmentPreview.attr('class').indexOf('subtype-svg+xml') != -1)
+                        {
+                            var handler = function (element) {
+
+                                jQuery.ajax({
+
+                                    url: script_vars.AJAXurl,
+                                    type: "POST",
+                                    dataType: 'html',
+                                    data: {
+                                        'action': 'svg_get_attachment_url',
+                                        'attachmentID': element.attr('data-id')
+                                    },
+                                    success: function (data) {
+                                        if (data)
+                                        {
+                                            element.find('img').attr('src', data);
+                                            element.find('.filename').text('SVG Image');
+                                        }
+                                    }
+                                });
+
+                            }(element);
+
+                        }
+                    }
+                }
+            }
+        }
+    }
+});
+
+var attachmentPreviewObserver = new MutationObserver(function (mutations) {
+    for (var i = 0; i < mutations.length; i++)
+    {
+        for (var j = 0; j < mutations[i].addedNodes.length; j++)
+        {
+            var element = $(mutations[i].addedNodes[j]);
+            var onAttachmentPage = false;
+            if ((element.hasClass('attachment-details')) || element.find('.attachment-details').length != 0)
+            {
+                onAttachmentPage = true;
+            }
+
+            if (onAttachmentPage == true)
+            {
+                var urlLabel = element.find('label[data-setting="url"]');
+                if (urlLabel.length != 0)
+                {
+                    var value = urlLabel.find('input').val();
+                    element.find('.details-image').attr('src', value);
+                }
+            }
+        }
+    }
+});
+
+$(document).ready(function () {
+
+    mediaGridObserver.observe(document.body, {
+        childList: true,
+        subtree: true
+    });
+
+    attachmentPreviewObserver.observe(document.body, {
+        childList: true,
+        subtree: true
+    });
+
+
+});
+</script>
