@@ -1,0 +1,34 @@
+//sort icons
+add_filter('wp_handle_upload_prefilter', 'media_pre_upload');
+add_filter('wp_handle_upload', 'media_post_upload');
+
+function media_pre_upload($file){
+    add_filter('upload_dir', 'wp_custom_upload_dir');
+    return $file;
+}
+
+function media_post_upload($fileinfo){
+    remove_filter('upload_dir', 'wp_custom_upload_dir');
+    return $fileinfo;
+}
+
+function wp_custom_upload_dir($path){
+    $extension = substr(strrchr($_POST['name'],'.'),1);
+
+    if(!empty($path['error']) ||  $extension != 'svg') { return $path; } //error or other filetype; do nothing.
+    
+    //if file is svg and starts with icon-* put contents in the icon folder
+    if(preg_match("/icon-/", $_POST['name']) == 1) {
+        $customdir = '/icons';
+
+        $path['path']    = str_replace($path['subdir'], '', $path['path']); //remove default subdir (year/month)
+        $path['url']     = str_replace($path['subdir'], '', $path['url']);
+        $path['subdir']  = $customdir;
+        $path['path']   .= $customdir;
+        $path['url']    .= $customdir;
+
+        return $path;
+    } else {
+        return $path;
+    }
+}
