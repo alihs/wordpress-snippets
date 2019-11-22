@@ -1,0 +1,14 @@
+// Login URL Redirect
+function theme_login_stringcheck() {
+    // set the location a failed attempt goes to
+    $redirect = 'https://google.come/';
+
+    // missing query string all together
+    if (!isset($_GET['question']))
+        wp_redirect(esc_url_raw($redirect), 302);
+
+    // incorrect value for query string
+    if ($_GET['question'] !== 'answer')
+        wp_redirect(esc_url_raw($redirect), 302);
+}
+add_action('login_init', 'theme_login_stringcheck');
