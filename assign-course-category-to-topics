@@ -1,0 +1,20 @@
+function update_topic_category($post_id) {
+	$post_type = get_post_type();
+
+    // If this is a revision or not a topic, RETURN
+    if ( $parent_id = wp_is_post_revision( $post_id ) || $post_type !== 'sfwd-topic' )  {
+		return;
+	}
+
+	//get assigned course
+	$course_id = get_post_meta($post_id, 'course_id', true);
+
+	//get course assigned category
+	$categories = get_the_category($course_id);
+
+	//assign categories
+	foreach ($categories as $category) {
+		wp_set_post_terms($post_id, $category->term_id, 'category', true);
+	}
+}
+add_action('save_post', 'update_topic_category', 10, 3);
